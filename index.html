@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Google Places API Example</title>
+   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFfEonuq1LX1MvTCgWvzkQKPUXrrDB74A&libraries=places"></script>
+</head>
+<body>
+   <h1>Google Places API Example</h1>
+   <input type="text" id="addressInput" placeholder="Type an address">
+   <div id="addressList"></div>
+
+   <script>
+      const input = document.getElementById('addressInput');
+      const addressList = document.getElementById('addressList');
+      const placesService = new google.maps.places.Autocomplete(input);
+
+      placesService.addListener('place_changed', function() {
+         const place = placesService.getPlace();
+         if (!place.place_id) {
+            return;
+         }
+         addressList.innerHTML = `Review Link: http://search.google.com/local/writereview?placeid=${place.place_id}`;
+      });
+   </script>
+</body>
+</html>
