@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Google Places API Example</title>
+   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFfEonuq1LX1MvTCgWvzkQKPUXrrDB74A&libraries=places"></script>
+   <style>
+      body {
+         margin: 0;
+         font-family: Arial, sans-serif;
+      }
+
+      #addressInput {
+         width: 100%;
+         padding: 10px;
+         box-sizing: border-box;
+      }
+
+      #addressList {
+         margin-top: 10px;
+      }
+
+      #reviewLink {
+         margin-top: 10px;
+      }
+
+      #copyButton {
+         margin-left: 10px;
+         padding: 5px 10px;
+         cursor: pointer;
+      }
+   </style>
+</head>
+<body>
+   <h1>Google Places API Example</h1>
+   <input type="text" id="addressInput" placeholder="Type an address">
+   <div id="addressList"></div>
+   <div id="reviewLink"></div>
+
+   <script>
+      const input = document.getElementById('addressInput');
+      const addressList = document.getElementById('addressList');
+      const reviewLink = document.getElementById('reviewLink');
+      const copyButton = document.createElement('button');
+      copyButton.innerText = 'Copy';
+      copyButton.id = 'copyButton';
+
+      document.body.appendChild(copyButton);
+
+      const placesService = new google.maps.places.Autocomplete(input);
+
+      placesService.addListener('place_changed', function() {
+         const place = placesService.getPlace();
+         if (!place.place_id) {
+            return;
+         }
+         const link = `http://search.google.com/local/writereview?placeid=${place.place_id}`;
+         reviewLink.innerHTML = `Review Link: <a href="${link}" target="_blank">${link}</a>`;
+      });
+
+      copyButton.addEventListener('click', function() {
+         const textToCopy = reviewLink.querySelector('a').innerText;
+         navigator.clipboard.writeText(textToCopy).then(function() {
+            alert('Link copied to clipboard!');
+         }).catch(function(err) {
+            console.error('Unable to copy to clipboard', err);
+         });
+      });
+   </script>
+</body>
+</html>
