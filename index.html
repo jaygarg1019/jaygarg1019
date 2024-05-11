@@ -14,16 +14,26 @@
     video {
         width: 100%;
         max-width: 640px;
+        height: auto;
     }
 </style>
 </head>
 <body>
     <div id="video-container">
-        <video id="video" autoplay></video>
+        <video id="video" autoplay playsinline></video>
     </div>
     <script>
-        // Get access to the camera
-        navigator.mediaDevices.getUserMedia({ video: true })
+        // Get access to the back camera
+        navigator.mediaDevices.enumerateDevices()
+        .then(function(devices) {
+            var videoDevices = devices.filter(device => device.kind === 'videoinput');
+            var backCamera = videoDevices.find(device => device.label.includes('back') || device.label.includes('rear'));
+            if (backCamera) {
+                return navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: backCamera.deviceId } } });
+            } else {
+                throw new Error('No back camera found.');
+            }
+        })
         .then(function(stream) {
             var video = document.getElementById('video');
             video.srcObject = stream;
