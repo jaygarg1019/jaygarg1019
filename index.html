@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camera Access</title>
+<title>Camera & QR Code Scanner</title>
 <style>
     #video-container {
         width: 100%;
@@ -19,6 +19,15 @@
     #camera-selection {
         margin-bottom: 20px;
     }
+    #qr-result {
+        margin: 20px auto;
+        width: 80%;
+        max-width: 600px;
+        text-align: center;
+    }
+    #clear-button {
+        margin-top: 20px;
+    }
 </style>
 </head>
 <body>
@@ -32,6 +41,9 @@
     <div id="video-container">
         <video id="video" autoplay playsinline></video>
     </div>
+    <div id="qr-result"></div>
+    <button id="clear-button">Clear</button>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
     <script>
         // Get access to the camera based on user selection
         function startCamera(camera) {
@@ -40,10 +52,41 @@
                 var video = document.getElementById('video');
                 video.srcObject = stream;
                 video.play();
+                scanQRCode();
             })
             .catch(function(err) {
                 console.log("An error occurred: " + err);
             });
+        }
+
+        // Scan QR code using camera
+        function scanQRCode() {
+            var video = document.getElementById('video');
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            var qrResult = document.getElementById('qr-result');
+            var clearButton = document.getElementById('clear-button');
+
+            function scan() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    var code = jsQR(imageData.data, imageData.width, imageData.height);
+                    if (code) {
+                        qrResult.innerText = "QR Code content: " + code.data;
+                        clearButton.disabled = false;
+                        clearButton.addEventListener('click', function() {
+                            qrResult.innerText = "";
+                            clearButton.disabled = true;
+                        });
+                    }
+                }
+                requestAnimationFrame(scan);
+            }
+
+            scan();
         }
 
         document.getElementById('camera-select').addEventListener('change', function() {
