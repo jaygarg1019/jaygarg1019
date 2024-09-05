@@ -1,134 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camera & QR Code Scanner</title>
-<style>
-    #video-container {
-        width: 100%;
-        height: auto;
-        margin: 20px auto;
-        text-align: center;
-    }
-    video {
-        width: 100%;
-        max-width: 640px;
-        height: auto;
-    }
-    #camera-selection {
-        margin-bottom: 20px;
-    }
-    #qr-result {
-        margin: 20px auto;
-        width: 80%;
-        max-width: 600px;
-        text-align: center;
-    }
-    #clear-button {
-        margin-top: 20px;
-    }
-</style>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Google Places API Example</title>
+   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDFfEonuq1LX1MvTCgWvzkQKPUXrrDB74A&libraries=places"></script>
+   <style>
+      body {
+         margin: 0;
+         font-family: Arial, sans-serif;
+      }
+
+      #addressInput {
+         width: 100%;
+         padding: 10px;
+         box-sizing: border-box;
+      }
+
+      #addressList {
+         margin-top: 10px;
+      }
+
+      #reviewLink {
+         margin-top: 10px;
+      }
+
+      #copyButton {
+         margin-left: 10px;
+         padding: 5px 10px;
+         cursor: pointer;
+      }
+   </style>
 </head>
 <body>
-    <div id="camera-selection">
-        <label for="camera-select">Select Camera:</label>
-        <select id="camera-select">
-            <option value="front">Front Camera</option>
-            <option value="back">Back Camera</option>
-        </select>
-    </div>
-    <div id="video-container">
-        <video id="video" autoplay playsinline></video>
-    </div>
-    <div id="qr-result"></div>
-    <button id="clear-button">Clear</button>
-    <button id="write-to-nfc">Write to NFC</button>
-    <div id="nfc-status"></div>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
-    <script>
-        // Get access to the camera based on user selection
-        function startCamera(camera) {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: camera } })
-            .then(function(stream) {
-                var video = document.getElementById('video');
-                video.srcObject = stream;
-                video.play();
-                scanQRCode();
-            })
-            .catch(function(err) {
-                console.log("An error occurred: " + err);
-            });
-        }
+   <h1>Google Places API Example</h1>
+   <input type="text" id="addressInput" placeholder="Type an address">
+   <div id="addressList"></div>
+   <div id="reviewLink"></div>
 
-        // Scan QR code using camera
-        function scanQRCode() {
-            var video = document.getElementById('video');
-            var canvas = document.createElement('canvas');
-            var context = canvas.getContext('2d');
-            var qrResult = document.getElementById('qr-result');
-            var clearButton = document.getElementById('clear-button');
+   <script>
+      const input = document.getElementById('addressInput');
+      const addressList = document.getElementById('addressList');
+      const reviewLink = document.getElementById('reviewLink');
+      const copyButton = document.createElement('button');
+      copyButton.innerText = 'Copy';
+      copyButton.id = 'copyButton';
 
-            function scan() {
-                if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                    var code = jsQR(imageData.data, imageData.width, imageData.height);
-                    if (code) {
-                        qrResult.innerText = "QR Code content: " + code.data;
-                        clearButton.disabled = false;
-                        clearButton.addEventListener('click', function() {
-                            qrResult.innerText = "";
-                            clearButton.disabled = true;
-                        });
-                    }
-                }
-                requestAnimationFrame(scan);
-            }
+      document.body.appendChild(copyButton);
 
-            scan();
-        }
+      const placesService = new google.maps.places.Autocomplete(input);
 
-        // Write content to NFC tag
-        function writeToNFC(content) {
-            if ('NDEFReader' in window) {
-                const nfcStatus = document.getElementById('nfc-status');
+      placesService.addListener('place_changed', function() {
+         const place = placesService.getPlace();
+         if (!place.place_id) {
+            return;
+         }
+         const link = `http://search.google.com/local/writereview?placeid=${place.place_id}`;
+         reviewLink.innerHTML = `Review Link: <a href="${link}" target="_blank">${link}</a>`;
+      });
 
-                const writer = new NDEFWriter();
-                writer.write(content)
-                    .then(() => {
-                        // NFC write successful
-                        nfcStatus.innerText = 'NFC Write Successful';
-                        nfcStatus.style.color = 'green';
-                    })
-                    .catch((error) => {
-                        // NFC write failed
-                        nfcStatus.innerText = 'NFC Write Failed: ' + error;
-                        nfcStatus.style.color = 'red';
-                    });
-            } else {
-                alert('Web NFC API not supported in this browser.');
-            }
-        }
-
-        document.getElementById('camera-select').addEventListener('change', function() {
-            var selectedCamera = this.value;
-            startCamera(selectedCamera);
-        });
-
-        document.getElementById('write-to-nfc').addEventListener('click', function() {
-            var qrResult = document.getElementById('qr-result').innerText;
-            if (qrResult) {
-                writeToNFC(qrResult);
-            } else {
-                alert('No QR code detected.');
-            }
-        });
-
-        // Start with the default camera (front camera)
-        startCamera('front');
-    </script>
+      copyButton.addEventListener('click', function() {
+         const textToCopy = reviewLink.querySelector('a').innerText;
+         navigator.clipboard.writeText(textToCopy).then(function() {
+            alert('Link copied to clipboard!');
+         }).catch(function(err) {
+            console.error('Unable to copy to clipboard', err);
+         });
+      });
+   </script>
 </body>
 </html>
